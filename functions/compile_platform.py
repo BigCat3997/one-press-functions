@@ -25,7 +25,9 @@ def maven_compile(
 
     maven_goals = (
         maven_goals
-        or """mvn clean package"""
+        or """
+        mvn clean package
+    """
     )
 
     shell_service.maven_cmd(
@@ -73,9 +75,12 @@ def npm_compile(
     npm_build_output_path: str,
     npm_goals: str,
     npm_env_file_path: str,
+    env_name: str,
 ):
-    dest_env_path = f"{npm_build_work_dir_path}/.env"
+    dest_env_path = f"{npm_build_work_dir_path}/{env_name}"
     io_util.cp(npm_env_file_path, dest_env_path)
+    shell_service.tree(npm_build_work_dir_path)
+
     npm_goals = (
         npm_goals
         or """
@@ -83,6 +88,7 @@ def npm_compile(
         """
     )
     shell_service.npm_cmd(npm_goals, cwd=npm_build_work_dir_path)
+
     npm_goals2 = """
             npm run build
         """
@@ -128,12 +134,14 @@ def compile(
             npm_build_output_path = kwargs.get("npm_build_output_path")
             npm_goals = kwargs.get("npm_goals")
             npm_env_file_path = kwargs.get("npm_env_file_path")
+            env_name = kwargs.get("env_name")
 
             npm_compile(
                 npm_build_work_dir_path=npm_build_work_dir_path,
                 npm_build_output_path=npm_build_output_path,
                 npm_goals=npm_goals,
                 npm_env_file_path=npm_env_file_path,
+                env_name=env_name,
             )
 
 
@@ -148,6 +156,7 @@ def execute(
     npm_build_output_path,
     npm_goals,
     npm_env_file_path,
+    env_name,
     maven_build_work_dir_path,
     maven_build_output_path,
     maven_goals,
@@ -164,6 +173,7 @@ def execute(
         npm_build_output_path=npm_build_output_path,
         npm_goals=npm_goals,
         npm_env_file_path=npm_env_file_path,
+        env_name=env_name,
         maven_build_work_dir_path=maven_build_work_dir_path,
         maven_build_output_path=maven_build_output_path,
         maven_goals=maven_goals,
@@ -199,6 +209,7 @@ if __name__ == "__main__":
     parser.add_argument("--npm-build-output-path", help="The build output path.")
     parser.add_argument("--npm-goals", help="The goals for NPM.")
     parser.add_argument("--npm-env-file-path", help="The path to NPM env file.")
+    parser.add_argument("--env-name", help="The name of NPM env file.")
     ## maven
     parser.add_argument(
         "--maven-build-work-dir-path", help="The build working directory path."
@@ -225,6 +236,7 @@ if __name__ == "__main__":
     npm_build_output_path = args.npm_build_output_path
     npm_goals = args.npm_goals
     npm_env_file_path = args.npm_env_file_path
+    env_name = args.env_name or ".env"
 
     maven_build_work_dir_path = args.maven_build_work_dir_path
     maven_build_output_path = args.maven_build_output_path
@@ -242,6 +254,7 @@ if __name__ == "__main__":
         npm_build_output_path=npm_build_output_path,
         npm_goals=npm_goals,
         npm_env_file_path=npm_env_file_path,
+        env_name=env_name,
         maven_build_work_dir_path=maven_build_work_dir_path,
         maven_build_output_path=maven_build_output_path,
         maven_goals=maven_goals,
