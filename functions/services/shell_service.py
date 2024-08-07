@@ -220,7 +220,7 @@ def docker_login(
     docker_login_cmd = (
         cmd
         or f"""
-        docker login {docker_server_uri} -u {docker_server_username} -p {docker_server_password}
+        echo {docker_server_password} | docker login {docker_server_uri} -u {docker_server_username} --password-stdin
     """
     )
 
@@ -288,7 +288,7 @@ def helm_registry_login(
     helm_registry_login_cmd = (
         cmd
         or f"""
-        helm registry login {helm_server_uri} --username {helm_server_username} --password {helm_server_password} 
+        echo {helm_server_password} | helm registry login {helm_server_uri} --username {helm_server_username} --password-stdin
     """
     )
 
