@@ -29,14 +29,14 @@ def execute_cmd(
                     print(cmd_subprocess_result.stderr)
     except subprocess.CalledProcessError as e:
         print(
-            f"""
+            textwrap.dedent(f"""
                 ===================
                 Command failed: {e.cmd}
                 Return code: {e.returncode}
                 Output: {e.output}
                 Error: {e.stderr}
                 ===================
-            """
+            """)
         )
         raise ExecutorShellError(
             "Command failed. Please investigate the command output above."
