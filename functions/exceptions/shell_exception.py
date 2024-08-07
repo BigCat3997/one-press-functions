@@ -1,0 +1,2 @@
+class ExecutorShellError(Exception):
+    pass
