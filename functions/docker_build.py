@@ -94,6 +94,7 @@ async def execute(
             docker_server_uri=docker_server_uri,
             docker_server_username=docker_server_username,
             docker_server_password=docker_server_password,
+            trace_cmd=True,
             collect_log_types=[shell_service.LogType.STDERR],
         )
 
