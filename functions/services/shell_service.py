@@ -12,7 +12,21 @@ def execute_cmd(
     trace_cmd=False,
     is_collect_log=True,
     collect_log_types=[LogType.STDOUT],
-) -> ExecutorShellError | subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess:
+    """
+    Executes a command in the shell and returns the result.
+    Args:
+        cmd (str): The command to be executed.
+        cwd (str, optional): The current working directory for the command execution. Defaults to None.
+        trace_cmd (bool, optional): Whether to print the command before executing. Defaults to False.
+        is_collect_log (bool, optional): Whether to collect and print the command output. Defaults to True.
+        collect_log_types (list, optional): The types of logs to collect. Defaults to [LogType.STDOUT].
+    Returns:
+        subprocess.CompletedProcess: The result of the command execution.
+    Raises:
+        ExecutorShellError: If the command execution fails.
+    """
+
     if trace_cmd:
         print(textwrap.dedent(cmd))
 
@@ -250,18 +264,18 @@ def helm_upgrade(
     cmd: str = None,
 ):
     set_args_str = (
-        " ".join(set_args) if set_args is not None and len(set_args) > 0 else ""
+        "\n".join(set_args) if set_args is not None and len(set_args) > 0 else ""
     )
 
     helm_upgrade_cmd = (
         cmd
         or f"""
-        helm upgrade --install --wait --force \
-        {project_name} {helm_chart_path} \
-        -f {helm_values_file_path} \
-        -f {helm_values_env_file_path} \
-        --set deployment.containers.{container_name}.image.repository={docker_server_uri}/{image_name} \
-        --set deployment.containers.{container_name}.image.tag={image_tag} \
+        helm upgrade --install --wait --force
+        {project_name} {helm_chart_path}
+        -f {helm_values_file_path}
+        -f {helm_values_env_file_path}
+        --set deployment.containers.{container_name}.image.repository={docker_server_uri}/{image_name}
+        --set deployment.containers.{container_name}.image.tag={image_tag}
         {set_args_str}
     """
     )
