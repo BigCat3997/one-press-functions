@@ -36,7 +36,9 @@ def _set_up_bootstrap_stage(bootstrap_prefix_path: str, bootstrap_section: str):
     print("> Expose paths into Azure Devops envs.")
     expose_ado_env_vars = [{"bootstrap_section_path": bootstrap_section_path}]
     ado_service.convert_to_ado_env_vars(expose_ado_env_vars, prefix_var="FLOW_")
-    jenkins_service.create_jenkins_env_var(expose_ado_env_vars, prefix_var="FLOW_")
+    jenkins_service.create_jenkins_env_var(
+        expose_ado_env_vars, env_vars_path=bootstrap_section_path, prefix_var="FLOW_"
+    )
 
 
 def _set_up_build_stage(
