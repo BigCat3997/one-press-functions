@@ -98,6 +98,10 @@ def convert_to_ado_env_vars(
             for env_var, value in env_dict.items():
                 os.environ[env_var] = value
                 process_env_var(env_var)
+    elif isinstance(env_vars, dict):
+        for env_var, value in env_vars.items():
+            os.environ[env_var] = value
+            process_env_var(env_var)
 
     print("Summarized envs:")
     if output_format == "table":
