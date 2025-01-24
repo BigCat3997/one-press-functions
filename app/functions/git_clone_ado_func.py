@@ -41,14 +41,18 @@ def execute():
 
     git_commit_id = git_clone_result["git_commit_id"]
     git_short_commit_id = git_clone_result["git_short_commit_id"]
-    git_clone_result_list = [
-        {"git_commit_id": git_commit_id},
-        {"git_short_commit_id": git_short_commit_id},
-    ]
+    # git_clone_result_list = [
+    #     {"git_commit_id": git_commit_id},
+    #     {"git_short_commit_id": git_short_commit_id},
+    # ]
+
+    print("> Expose git vars.")
+    git_clone_result = {
+        "git_commit_id": git_commit_id,
+        "git_short_commit_id": git_short_commit_id,
+    }
+    ado_service.convert_to_ado_env_vars(git_clone_result, prefix_var="FLOW_")
 
     print("> Archive the app source.")
     archive_path = os.path.join(archive_path, f"{app_source}.zip")
     shell_service.zip(archive_path, app_source)
-
-    print("> Expose git vars.")
-    ado_service.convert_to_ado_env_vars(git_clone_result_list, prefix_var="FLOW_")
