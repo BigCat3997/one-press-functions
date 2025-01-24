@@ -1,12 +1,16 @@
 import os
 
 from app.models.platform_model import Platform
-from app.services import shell_service
+from app.services import ado_service, shell_service
 from app.utils import adapter_util, io_util
 
 
 def _fetch_required_env_var():
     env_vars = {
+        "app_source_dir": os.getenv("APP_SOURCE_DIR", ""),
+        "target_sub_dir": os.getenv("TARGET_SUB_DIR", ""),
+        "target_unit_test_app": os.getenv("TARGET_UNIT_TEST_APP", ""),
+        "target_unit_test_output": os.getenv("TARGET_UNIT_TEST_OUTPUT", ""),
         "picked_platform": os.getenv("PICKED_PLATFORM"),
         "is_use_private_libs": adapter_util.getenv_bool("IS_USE_PRIVATE_LIBS", False),
         "work_dir_path": os.getenv("WORK_DIR_PATH"),
@@ -105,18 +109,29 @@ def _python_run_unit_test(
         shell_service.conda_create_venv_cmd(
             venv_name=venv_name, python_version=python_version
         )
+
     shell_service.conda_run_install_libs(
         venv_name=venv_name, requirements_txt_path=requirements_txt_path
     )
+
+    goal_command = (
+        goal_command
+        or """
+            python -m xmlrunner discover -s {work_dir} -o {output_path}
+        """.format(work_dir=work_dir_path, output_path=output_path)
+    )
+
     shell_service.conda_run_with_goal(venv_name=venv_name, goal_cmd=goal_command)
 
 
 def execute():
     env_vars = _fetch_required_env_var()
+    app_source_dir = env_vars["app_source_dir"]
+    target_sub_dir = env_vars["target_sub_dir"]
+    target_unit_test_app = env_vars["target_unit_test_app"]
+    target_unit_test_output = env_vars["target_unit_test_output"]
     picked_platform = env_vars["picked_platform"]
     is_use_private_libs = env_vars["is_use_private_libs"]
-    work_dir_path = env_vars["work_dir_path"]
-    output_path = env_vars["output_path"]
     goal_command = env_vars["goal_command"]
     settings_xml_path = env_vars["settings_xml_path"]
     nuget_config_path = env_vars["nuget_config_path"]
@@ -124,6 +139,15 @@ def execute():
     venv_path = env_vars["venv_path"]
     venv_name = env_vars["venv_name"]
     requirements_txt_path = env_vars["requirements_txt_path"]
+
+    work_dir_path = os.path.join(app_source_dir, target_sub_dir, target_unit_test_app)
+    output_path = os.path.join(app_source_dir, target_sub_dir, target_unit_test_output)
+
+    expose_ado_env_vars = {
+        "target_unit_test_dir": work_dir_path,
+        "target_unit_test_output_dir": output_path,
+    }
+    ado_service.convert_to_ado_env_vars(expose_ado_env_vars, prefix_var="FLOW_")
 
     platform = Platform(picked_platform.upper())
     match platform:

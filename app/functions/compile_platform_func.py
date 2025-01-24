@@ -1,20 +1,22 @@
 import os
 
 from app.models.platform_model import Platform
-from app.services import shell_service
+from app.services import ado_service, shell_service
 from app.utils import adapter_util, io_util
 
 
 def _fetch_required_env_var():
     env_vars = {
+        "target_sub_dir": os.getenv("TARGET_SUB_DIR", ""),
+        "app_source_dir": os.getenv("APP_SOURCE_DIR", ""),
+        "target_build_app": os.getenv("TARGET_BUILD_APP", ""),
+        "target_build_output": os.getenv("TARGET_BUILD_OUTPUT", ""),
         "target_platform": os.getenv("TARGET_PLATFORM"),
-        "build_work_dir_path": os.getenv("BUILD_WORK_DIR_PATH"),
-        "build_output_path": os.getenv("BUILD_OUTPUT_PATH"),
-        "goal_command": os.getenv("GOAL_COMMAND"),
+        "goal_command": os.getenv("GOAL_COMMAND", ""),
         "is_use_private_libs": adapter_util.getenv_bool("IS_USE_PRIVATE_LIBS", False),
-        "nuget_config_path": os.getenv("NUGET_CONFIG_PATH"),
-        "settings_xml_path": os.getenv("SETTINGS_XML_PATH"),
-        "npm_env_file_path": os.getenv("NPM_ENV_FILE_PATH"),
+        "nuget_config_path": os.getenv("NUGET_CONFIG_PATH", ""),
+        "settings_xml_path": os.getenv("SETTINGS_XML_PATH", ""),
+        "npm_env_file_path": os.getenv("NPM_ENV_FILE_PATH", ""),
         "env_name": os.getenv("ENV_NAME", ".env"),
     }
     return env_vars
@@ -113,15 +115,28 @@ def _npm_compile(
 
 def compile():
     env_vars = _fetch_required_env_var()
+    target_sub_dir = env_vars["target_sub_dir"]
     target_platform = env_vars["target_platform"]
-    build_work_dir_path = env_vars["build_work_dir_path"]
-    build_output_path = env_vars["build_output_path"]
+    app_source_dir = env_vars["app_source_dir"]
+    target_build_app = env_vars["target_build_app"]
+    target_build_output = env_vars["target_build_output"]
     goal_command = env_vars["goal_command"]
     is_use_private_libs = env_vars["is_use_private_libs"]
     nuget_config_path = env_vars["nuget_config_path"]
     settings_xml_path = env_vars["settings_xml_path"]
     npm_env_file_path = env_vars["npm_env_file_path"]
     env_name = env_vars["env_name"]
+
+    build_work_dir_path = os.path.join(app_source_dir, target_sub_dir, target_build_app)
+    build_output_path = os.path.join(
+        app_source_dir, target_sub_dir, target_build_output
+    )
+
+    expose_ado_env_vars = {
+        "target_build_app_dir": build_work_dir_path,
+        "target_build_output_dir": build_output_path,
+    }
+    ado_service.convert_to_ado_env_vars(expose_ado_env_vars, prefix_var="FLOW_")
 
     platform = Platform(target_platform.upper())
     match platform:
@@ -149,6 +164,8 @@ def compile():
                 npm_env_file_path=npm_env_file_path,
                 env_name=env_name,
             )
+        case _:
+            print("Do nothing.")
 
 
 def execute():
