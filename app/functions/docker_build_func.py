@@ -2,7 +2,7 @@ import json
 import os
 
 from app.models.publisher_model import Publisher
-from app.services import shell_service
+from app.services import ado_service, shell_service
 from app.utils import adapter_util, io_util
 
 
@@ -154,3 +154,6 @@ def execute():
         docker_server_password=docker_server_password,
         target_build_docker_path=target_build_docker_path,
     )
+
+    print("> Add tag on pipeline.")
+    ado_service.add_tag_on_pipeline([f"image_name={image_name}", f"image_tag={image_tag}"])
