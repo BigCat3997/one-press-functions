@@ -489,6 +489,28 @@ def conda_run_with_goal(
     )
 
 
+def check_version_maven(
+    cwd=None,
+    trace_cmd=False,
+    is_collect_log=True,
+    collect_log_types=[LogType.STDOUT],
+    cmd: str = None,
+):
+    check_version_maven_cmd = (
+        cmd
+        or """
+        mvn --version
+    """
+    )
+    return execute_cmd(
+        check_version_maven_cmd,
+        cwd=cwd,
+        trace_cmd=trace_cmd,
+        is_collect_log=is_collect_log,
+        collect_log_types=collect_log_types,
+    )
+
+
 def maven_cmd(
     maven_cmd,
     cwd=None,
