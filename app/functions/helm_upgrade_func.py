@@ -4,7 +4,7 @@ import os
 from typing import List
 
 from app.models.publisher_model import Publisher
-from app.services import shell_service
+from app.services import ado_service, shell_service
 from app.utils import adapter_util, io_util
 
 
@@ -131,13 +131,13 @@ def execute():
     docker_server_uri = publisher.docker_server_uri
     image_name = publisher.image_name
     is_image_tag_based_on_env = publisher.is_image_tag_based_on_env
-    container_required_envs = publisher.container_required_envs
+    container_env_var = publisher.container_env_var
 
     target_container_name = "mainApp"
 
     appended_common_env_vars = []
     common_arg = "deployment.containers.{container_name}.env.common.{env_var_name}={env_var_value}"
-    for key, value in container_required_envs.public_manually_loader_envs.items():
+    for key, value in container_env_var.manually_public_env_vars.items():
         appended_common_env_vars.append(
             common_arg.format(
                 container_name=target_container_name,
@@ -146,7 +146,7 @@ def execute():
             )
         )
 
-    for env in container_required_envs.public_loader_envs:
+    for env in container_env_var.host_public_env_vars:
         if is_scan_azure_secrets_vault:
             target_env = os.getenv(env.replace("_", "-"))
             if target_env is None:
@@ -164,7 +164,7 @@ def execute():
 
     appended_secret_env_vars = []
     secret_arg = "deployment.containers.{container_name}.env.secret.{env_var_name}={env_var_value}"
-    for env in container_required_envs.private_loader_envs:
+    for env in container_env_var.host_private_env_vars:
         if is_scan_azure_secrets_vault:
             target_env = os.getenv(env.replace("_", "-"))
             if target_env is None:
@@ -180,7 +180,7 @@ def execute():
             )
         )
 
-    for key, value in container_required_envs.private_manually_loader_envs.items():
+    for key, value in container_env_var.manually_private_env_vars.items():
         appended_secret_env_vars.append(
             secret_arg.format(
                 container_name=target_container_name,
@@ -239,4 +239,10 @@ def execute():
         image_name=image_name,
         image_tag=image_tag,
         append_helm_args=append_helm_args,
+    )
+
+    ado_service.add_tag_on_pipeline(
+        tags=[
+            f"[{environment}][{image_name}/{image_tag}]",
+        ]
     )
