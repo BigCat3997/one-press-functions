@@ -30,27 +30,27 @@ class ImageTags:
 
 
 @dataclass
-class ContainerRequiredEnvs:
-    public_manually_loader_envs: Dict[str, str] = None
-    private_manually_loader_envs: Dict[str, str] = None
-    public_loader_envs: List[str] = None
-    private_loader_envs: List[str] = None
+class ContainerEnvVar:
+    manually_public_env_vars: Dict[str, str] = None
+    manually_private_env_vars: Dict[str, str] = None
+    host_public_env_vars: List[str] = None
+    host_private_env_vars: List[str] = None
 
     @staticmethod
-    def from_json(data: Dict) -> "ContainerRequiredEnvs":
-        return ContainerRequiredEnvs(
-            public_manually_loader_envs=data["public_manually_loader_envs"],
-            private_manually_loader_envs=data["private_manually_loader_envs"],
-            public_loader_envs=data["public_loader_envs"],
-            private_loader_envs=data["private_loader_envs"],
+    def from_json(data: Dict) -> "ContainerEnvVar":
+        return ContainerEnvVar(
+            manually_public_env_vars=data["manually_public_env_vars"],
+            manually_private_env_vars=data["manually_private_env_vars"],
+            host_public_env_vars=data["host_public_env_vars"],
+            host_private_env_vars=data["host_private_env_vars"],
         )
 
     def to_dict(self) -> Dict:
         return {
-            "public_manually_loader_envs": self.public_manually_loader_envs,
-            "private_manually_loader_envs": self.private_manually_loader_envs,
-            "public_loader_envs": self.public_loader_envs,
-            "private_loader_envs": self.private_loader_envs,
+            "manually_public_env_vars": self.manually_public_env_vars,
+            "manually_private_env_vars": self.manually_private_env_vars,
+            "host_public_env_vars": self.host_public_env_vars,
+            "host_private_env_vars": self.host_private_env_vars,
         }
 
     def __str__(self) -> str:
@@ -68,7 +68,7 @@ class Publisher:
     is_image_tag_based_on_env: bool = False
     image_name: str = None
     image_tags: ImageTags = None
-    container_required_envs: ContainerRequiredEnvs = None
+    container_env_var: ContainerEnvVar = None
 
     @staticmethod
     def from_json(data: Dict) -> "Publisher":
@@ -82,9 +82,7 @@ class Publisher:
             is_image_tag_based_on_env=data["is_image_tag_based_on_env"],
             image_name=data["image_name"],
             image_tags=ImageTags.from_json(data["image_tags"]),
-            container_required_envs=ContainerRequiredEnvs.from_json(
-                data["container_required_envs"]
-            ),
+            container_env_var=ContainerEnvVar.from_json(data["container_env_var"]),
         )
 
     @staticmethod
@@ -108,7 +106,7 @@ class Publisher:
             "is_image_tag_based_on_env": self.is_image_tag_based_on_env,
             "image_name": self.image_name,
             "image_tags": self.image_tags.to_dict(),
-            "container_required_envs": self.container_required_envs.to_dict(),
+            "container_env_var": self.container_env_var.to_dict(),
         }
 
     def __str__(self) -> str:
