@@ -1,7 +1,8 @@
 import json
 import os
 
-from app.models.publisher_model import ContainerRequiredEnvs, ImageTags, Publisher
+from app.models.publisher_model import ContainerEnvVar, ImageTags, Publisher
+from app.services import ado_service
 from app.utils import adapter_util
 
 
@@ -24,11 +25,12 @@ def _fetch_required_env_var():
         "is_default_public_envs": adapter_util.getenv_bool(
             "IS_DEFAULT_PUBLIC_ENVS", True
         ),
-        "public_manually_loader_envs": os.getenv("PUBLIC_MANUALLY_LOADER_ENVS"),
-        "private_manually_loader_envs": os.getenv("PRIVATE_MANUALLY_LOADER_ENVS"),
-        "public_loader_envs": os.getenv("PUBLIC_LOADER_ENVS"),
-        "private_loader_envs": os.getenv("PRIVATE_LOADER_ENVS"),
+        "manually_public_env_vars": os.getenv("MANUALLY_PUBLIC_ENV_VARS"),
+        "manually_private_env_vars": os.getenv("MANUALLY_PRIVATE_ENV_VARS"),
+        "host_public_env_vars": os.getenv("HOST_PUBLIC_ENV_VARS"),
+        "host_private_env_vars": os.getenv("HOST_PRIVATE_ENV_VARS"),
     }
+
     return env_vars
 
 
@@ -47,10 +49,10 @@ def execute():
     image_name = env_vars["image_name"]
     image_tag = env_vars["image_tag"]
     is_default_public_envs = env_vars["is_default_public_envs"]
-    public_manually_loader_envs = env_vars["public_manually_loader_envs"]
-    private_manually_loader_envs = env_vars["private_manually_loader_envs"]
-    public_loader_envs = env_vars["public_loader_envs"]
-    private_loader_envs = env_vars["private_loader_envs"]
+    manually_public_env_vars = env_vars["manually_public_env_vars"]
+    manually_private_env_vars = env_vars["manually_private_env_vars"]
+    host_public_env_vars = env_vars["host_public_env_vars"]
+    host_private_env_vars = env_vars["host_private_env_vars"]
 
     image_tags = ImageTags()
     if is_image_tag_based_on_env:
@@ -60,21 +62,21 @@ def execute():
     else:
         image_tags = ImageTags.from_json({"base": image_tag})
 
-    public_loader_envs_dict = []
-    if public_loader_envs is not None and public_loader_envs != "":
-        for env in json.loads(public_loader_envs):
-            public_loader_envs_dict.append(env)
+    host_public_env_vars_dict = []
+    if host_public_env_vars is not None and host_public_env_vars != "":
+        for env in json.loads(host_public_env_vars):
+            host_public_env_vars_dict.append(env)
 
-    private_loader_envs_dict = []
-    if private_loader_envs is not None and private_loader_envs != "":
-        for env in json.loads(private_loader_envs):
-            private_loader_envs_dict.append(env)
+    host_private_env_vars_dict = []
+    if host_private_env_vars is not None and host_private_env_vars != "":
+        for env in json.loads(host_private_env_vars):
+            host_private_env_vars_dict.append(env)
 
-    public_manually_loader_envs_dict = {}
-    if public_manually_loader_envs is not None and public_manually_loader_envs != "":
-        for public_env in json.loads(public_manually_loader_envs):
+    manually_public_env_vars_dict = {}
+    if manually_public_env_vars is not None and manually_public_env_vars != "":
+        for public_env in json.loads(manually_public_env_vars):
             for key, value in public_env.items():
-                public_manually_loader_envs_dict[key] = value
+                manually_public_env_vars_dict[key] = value
     if is_default_public_envs:
         default_public_envs = {
             "GIT_URL": git_url,
@@ -83,17 +85,17 @@ def execute():
             "PIPELINE_NAME": pipeline_name,
             "BUILD_NUMBER": build_number,
         }
-        public_manually_loader_envs_dict.update(default_public_envs)
-    private_manually_loader_envs_dict = {}
-    if private_manually_loader_envs is not None and private_manually_loader_envs != "":
-        for private_env in json.loads(private_manually_loader_envs):
+        manually_public_env_vars_dict.update(default_public_envs)
+    manually_private_env_vars_dict = {}
+    if manually_private_env_vars is not None and manually_private_env_vars != "":
+        for private_env in json.loads(manually_private_env_vars):
             for key, value in private_env.items():
-                private_manually_loader_envs_dict[key] = value
-    container_required_envs = ContainerRequiredEnvs(
-        public_manually_loader_envs=public_manually_loader_envs_dict,
-        private_manually_loader_envs=private_manually_loader_envs_dict,
-        public_loader_envs=public_loader_envs_dict,
-        private_loader_envs=private_loader_envs_dict,
+                manually_private_env_vars_dict[key] = value
+    container_env_var = ContainerEnvVar(
+        manually_public_env_vars=manually_public_env_vars_dict,
+        manually_private_env_vars=manually_private_env_vars_dict,
+        host_public_env_vars=host_public_env_vars_dict,
+        host_private_env_vars=host_private_env_vars_dict,
     )
 
     publisher = Publisher()
@@ -106,10 +108,12 @@ def execute():
     publisher.is_image_tag_based_on_env = is_image_tag_based_on_env
     publisher.image_name = image_name
     publisher.image_tags = image_tags
-    publisher.container_required_envs = container_required_envs
+    publisher.container_env_var = container_env_var
 
     print("Verify publisher.")
     print(json.dumps(publisher.to_dict(), indent=4))
     publish_file_path = os.path.join(publish_prefix_path, publish_file_name)
     with open(publish_file_path, "w") as f:
         json.dump(publisher.to_dict(), f, indent=4)
+
+    ado_service.add_tag_on_pipeline([f"commit_id={git_commit_id}"])
