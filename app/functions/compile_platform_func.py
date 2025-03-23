@@ -16,8 +16,7 @@ def _fetch_required_env_var():
         "is_use_private_libs": adapter_util.getenv_bool("IS_USE_PRIVATE_LIBS", False),
         "nuget_config_path": os.getenv("NUGET_CONFIG_PATH", ""),
         "settings_xml_path": os.getenv("SETTINGS_XML_PATH", ""),
-        "npm_env_file_path": os.getenv("NPM_ENV_FILE_PATH", ""),
-        "env_name": os.getenv("ENV_NAME", ".env"),
+        "env_build_resource_dir": os.getenv("ENV_BUILD_RESOURCE_DIR", ""),
     }
     return env_vars
 
@@ -38,6 +37,8 @@ def _maven_compile(
         dest_settings_xml_path = os.path.expanduser("~/.m2/settings.xml")
         io_util.cp(settings_xml_path, dest_settings_xml_path)
         shell_service.cat(dest_settings_xml_path)
+
+    shell_service.check_version_maven()
 
     maven_goals = (
         maven_goals
@@ -62,6 +63,7 @@ def _dotnet_compile(
     nuget_config_path: str,
 ):
     if is_use_private_libs:
+        print("> Fetching libs from private repository.")
         nuget_home = os.path.expanduser("~/.nuget/NuGet")
         if not os.path.exists(nuget_home):
             os.makedirs(nuget_home)
@@ -91,26 +93,28 @@ def _dotnet_compile(
 def _npm_compile(
     npm_build_work_dir_path: str,
     npm_build_output_path: str,
-    npm_goals: str,
-    npm_env_file_path: str,
-    env_name: str,
+    env_build_resource_dir: str,
+    npm_install_goal: str = None,
+    npm_build_goal: str = None,
 ):
-    dest_env_path = f"{npm_build_work_dir_path}/{env_name}"
-    io_util.cp(npm_env_file_path, dest_env_path)
+    io_util.cp(f"{env_build_resource_dir}/", npm_build_work_dir_path)
     shell_service.tree(npm_build_work_dir_path)
 
-    npm_goals = (
-        npm_goals
+    npm_install_goal = (
+        npm_install_goal
         or """
             npm install
         """
     )
-    shell_service.npm_cmd(npm_goals, cwd=npm_build_work_dir_path)
+    shell_service.npm_cmd(npm_install_goal, cwd=npm_build_work_dir_path)
 
-    npm_goals2 = """
+    npm_build_goal = (
+        npm_build_goal
+        or """
             npm run build
         """
-    shell_service.npm_cmd(npm_goals2, cwd=npm_build_work_dir_path)
+    )
+    shell_service.npm_cmd(npm_build_goal, cwd=npm_build_work_dir_path)
 
 
 def compile():
@@ -124,8 +128,7 @@ def compile():
     is_use_private_libs = env_vars["is_use_private_libs"]
     nuget_config_path = env_vars["nuget_config_path"]
     settings_xml_path = env_vars["settings_xml_path"]
-    npm_env_file_path = env_vars["npm_env_file_path"]
-    env_name = env_vars["env_name"]
+    env_build_resource_dir = env_vars["env_build_resource_dir"]
 
     build_work_dir_path = os.path.join(app_source_dir, target_sub_dir, target_build_app)
     build_output_path = os.path.join(
@@ -160,9 +163,8 @@ def compile():
             _npm_compile(
                 npm_build_work_dir_path=build_work_dir_path,
                 npm_build_output_path=build_output_path,
-                npm_goals=goal_command,
-                npm_env_file_path=npm_env_file_path,
-                env_name=env_name,
+                npm_install_goal=goal_command,
+                env_build_resource_dir=env_build_resource_dir,
             )
         case _:
             print("Do nothing.")
