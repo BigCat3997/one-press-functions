@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from ast import List
+from typing import List
 
 from tabulate import tabulate
 
@@ -10,6 +10,11 @@ from app.models.ado_model import AdoVariable
 
 def update_build_number(build_number: str):
     print(f"##vso[build.updatebuildnumber]{build_number}")
+
+
+def add_tag_on_pipeline(tags: List[str]):
+    for tag in tags:
+        print(f"##vso[build.addbuildtag]{tag}")
 
 
 def notify_processed_vars(json_file_path, type):
@@ -60,7 +65,6 @@ def convert_to_ado_env_vars(
         output_format (str, optional): The format in which to print the environment variables. Can be "table" or "json". Defaults to "table".
     """
 
-    print("Treat vars in either Bash context or Azure DevOps template as list below:")
     summarized_envs = []
 
     def process_env_var(env_var: str) -> None:
@@ -103,7 +107,7 @@ def convert_to_ado_env_vars(
             os.environ[env_var] = value
             process_env_var(env_var)
 
-    print("Summarized envs:")
+    print("> Treat vars in either Bash context or Azure DevOps template as list below:")
     if output_format == "table":
         print(
             tabulate(
