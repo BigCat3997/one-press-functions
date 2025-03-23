@@ -10,11 +10,14 @@ This project is designed to provide all functions to support in CICD processor b
 
 ## Table of Contents
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [Modules](#modules)
-- [Contributing](#contributing)
-- [License](#license)
+- [one-press-functions](#one-press-functions)
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Modules](#modules)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Installation
 
@@ -28,16 +31,38 @@ pip install -r requirements.txt
 
 ## Usage
 
-foo
+Init python version > 3.10 for this project and call the function to use.
+This is way I invoke function app at Azure pipeline.
+
+```yaml
+    - bash: |
+        echo "##vso[task.setvariable variable=PATH;]${CONDA_BIN_PATH}:${PATH}"
+        echo "##vso[task.setvariable variable=PYTHONPATH;]${FUNCTIONS_WORK_DIR}:${PYTHONPATH}"
+    env:
+        CONDA_BIN_PATH: ${{ parameters.condaBinPath }}
+        FUNCTIONS_WORK_DIR: "${{ parameters.functionsWorkDir }}"
+    displayName: "Bootstrap: Set up env"
+
+    - bash: |
+        source activate $FUNCTIONS_VENV
+        python $EXECUTE_COMMAND
+    env:
+        FUNCTIONS_VENV: ${{ parameters.functionsVenv }}
+        EXECUTE_COMMAND: ${{ parameters.functionsWorkDir }}/app/main.py INITIALIZE_WORKSPACE
+        STAGE_NAME: BOOTSTRAP
+        BOOTSTRAP_BASE_DIR: "${{ parameters.workspaceWorkDir }}"
+    displayName: "Bootstrap: Initialize workspace"
+```
 
 ## Modules
 
-foo
+...
 
 ## Contributing
 
-foo
+...
 
 ## License
 
-foo
+This project is licensed under the MIT License. See the LICENSE file for more details.
+
